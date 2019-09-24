@@ -6,9 +6,9 @@ import glob
 import skimage.io as io
 import skimage.transform as trans
 
-Sky = [128,128,128]
-Building = [128,0,0]
-Pole = [192,192,128]
+Sky = [255,255,255]
+Building = [0,0,0]
+Pole = [255,0,0]
 Road = [128,64,128]
 Pavement = [60,40,222]
 Tree = [128,128,0]
@@ -39,8 +39,13 @@ def adjustData(img,mask,flag_multi_class,num_class):
     elif(np.max(img) > 1):
         img = img / 255.0
         mask = mask /255.0
+        #xx = np.reshape(img,(256,256))
+        #io.imshow(xx)
+
         mask[mask > 0.5] = 1
         mask[mask <= 0.5] = 0
+        #xx = np.reshape(mask, (256, 256))
+        #io.imshow(xx)
     return (img,mask)
 
 
@@ -80,11 +85,44 @@ def trainGenerator(batch_size,train_path,image_folder,mask_folder,aug_dict,image
         img,mask = adjustData(img,mask,flag_multi_class,num_class)
         yield (img,mask)
 
-
-
-def testGenerator(test_path,num_image = 30,target_size = (256,256),flag_multi_class = False,as_gray = True):
+#在遇见全黑全灰的时候多用io.imshow查看格式转换时 数据是否有丢失
+def trainGenerator1(image_path,label_path,num_image = 30,target_size = (256,256),flag_multi_class =True):
+    #针对数据生成器难以调试写的函数
+    #直接使用图像和目标进行训练 不使用数据增强
+    result = []
     for i in range(num_image):
-        img = io.imread(os.path.join(test_path,"%d.jpg"%i),as_gray = as_gray)
+        img = io.imread(os.path.join(image_path,"%d.png"%i))
+        label = io.imread(os.path.join(label_path,"%d.png"%i))
+
+        img = img / 255.0
+        label = label/255.0
+        #二值化 sigmoid函数二分类
+        io.imshow(img)
+        label[label>0.5] = 1
+        label[label<=0.5] = 0
+        io.imshow(img)
+        io.imshow(label)
+        label = trans.resize(label,target_size)
+        io.imshow(label)
+        label = np.reshape(label, label.shape + (1,))
+        label = np.reshape(label, (1,) + label.shape)
+        img = trans.resize(img,target_size)
+        io.imshow(img)
+        img = np.reshape(img,img.shape+(1,))
+        img = np.reshape(img,(1,)+img.shape)
+
+        #网络需要的时float32的数据类型
+        img = np.float32(img)
+        label = np.float32(label)
+        result.append(img)
+        result.append(label)
+
+    return result
+
+
+def testGenerator(test_path,num_image = 30,target_size = (256,256,1),flag_multi_class =True):
+    for i in range(num_image):
+        img = io.imread(os.path.join(test_path,"%d.jpg"%i))
         img = img / 255.0
         img = trans.resize(img,target_size)
         img = np.reshape(img,img.shape+(1,)) if (not flag_multi_class) else img
@@ -92,10 +130,10 @@ def testGenerator(test_path,num_image = 30,target_size = (256,256),flag_multi_cl
         yield img
 
 
-def gan_testGenerator(test_path,num_image = 30,target_size = (256,256),flag_multi_class = False,as_gray = True):
+def gan_testGenerator(test_path,num_image = 30,target_size = (256,256,3),flag_multi_class = True):
     imgz=[]
     for i in range(num_image):
-        img = io.imread(os.path.join(test_path,"%d.jpg"%i),as_gray = as_gray)
+        img = io.imread(os.path.join(test_path,"%d.jpg"%i))
         img = img / 255.0
         img = trans.resize(img,target_size)
         img = np.reshape(img,img.shape+(1,)) if (not flag_multi_class) else img
@@ -131,7 +169,9 @@ def labelVisualize(num_class,color_dict,img):
 
 
 def saveResult(save_path,npyfile,flag_multi_class = False,num_class = 2):
-    for i, item in enumerate(npyfile):
-        img = labelVisualize(num_class, COLOR_DICT, item) if flag_multi_class else item[:, :, 0]
-        # 多类的话就图成彩色，非多类（两类）的话就是黑白色
-        io.imsave(os.path.join(save_path, "%d_predict.png" % i), img)
+    for i,item in enumerate(npyfile):
+        img = labelVisualize(num_class,COLOR_DICT,item) if flag_multi_class else item[:,:,0]
+#多类的话就图成彩色，非多类（两类）的话就是黑白色
+        img[img>0.5] = 1
+        img[img<=0.5] = 0
+        io.imsave(os.path.join(save_path,"%d_predict.png"%i),img)

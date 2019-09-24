@@ -9,7 +9,7 @@ import os
 from LoadData import *
 from keras.applications.vgg16 import VGG16
 
-os.environ['KERAS_BACKEND']='tensorflow'
+
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def unet1():
@@ -20,19 +20,27 @@ def unet1():
                     zoom_range=0.05,
                     horizontal_flip=True,
                     fill_mode='nearest')
-    myGene = trainGenerator(2,'data/membrane/train','image','label',data_gen_args,save_to_dir = None)
-
+    myGene = trainGenerator(2,'data/membrane/train','paper_image','paper_label',data_gen_args,save_to_dir = None)
+    #myGene = trainGenerator(2, 'data/membrane/train', 'orgin', 'orgin_label', data_gen_args, save_to_dir=None)
+    #myGene = trainGenerator1('data/membrane/train/orgin','data/membrane/train/orgin_label',num_image=1)
     model = unet()
-    model_checkpoint = ModelCheckpoint('unet_membrane.hdf5', monitor='loss',verbose=1, save_best_only=True)
+    model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+    model_checkpoint = ModelCheckpoint('unet_membrane1.hdf5', monitor='loss',verbose=1, save_best_only=True)
 
-    model.load_weights('unet_membrane.hdf5')
+    #model.load_weights('unet_membrane1.hdf5')
     #训练函数
-    model.fit_generator(myGene,steps_per_epoch=300,epochs=0,callbacks=[model_checkpoint])
+    model.fit_generator(myGene,steps_per_epoch=20,epochs=1,callbacks=[model_checkpoint])
+
+    #for i in  range(10):
+        #loss = model.train_on_batch(myGene[0],myGene[1])
+        #print(i, loss[0] ,loss[1])
+    #model.save_weights('unet_membrane1.hdf5')
     #载入已有函数
     #model.load_weights('unet_membrane.hdf5')
-    testGene = testGenerator("data/membrane/2")
-    results = model.predict_generator(testGene,30,verbose=1)
-    saveResult("data/membrane/2",results)
+    testGene = testGenerator("data/membrane/train/paper_image",num_image = 1)
+
+    results = model.predict_generator(testGene,1,verbose=1)
+    saveResult("data/membrane/train/out",results)
 '''
 def unetgan():
 
