@@ -87,8 +87,7 @@ def trainGenerator(batch_size,train_path,image_folder,mask_folder,aug_dict,image
 
 #在遇见全黑全灰的时候多用io.imshow查看格式转换时 数据是否有丢失
 def trainGenerator1(image_path,label_path,num_image = 30,target_size = (256,256),flag_multi_class =True):
-    #针对数据生成器难以调试写的函数
-    #直接使用图像和目标进行训练 不使用数据增强
+    #自己写的预处理函数
     result = []
     for i in range(num_image):
         img = io.imread(os.path.join(image_path,"%d.png"%i))
