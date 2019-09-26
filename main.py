@@ -20,14 +20,14 @@ def unet1():
                     zoom_range=0.05,
                     horizontal_flip=True,
                     fill_mode='nearest')
-    myGene = trainGenerator(2,'data/membrane/train','paper_image','paper_label',data_gen_args,save_to_dir = None)
+    myGene = trainGenerator(1,'data/membrane/train','paper_image','paper_label',data_gen_args,save_to_dir = None)
     #myGene = trainGenerator(2, 'data/membrane/train', 'orgin', 'orgin_label', data_gen_args, save_to_dir=None)
     #myGene = trainGenerator1('data/membrane/train/orgin','data/membrane/train/orgin_label',num_image=1)
     model = unet()
-    model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
-    model_checkpoint = ModelCheckpoint('unet_membrane1.hdf5', monitor='loss',verbose=1, save_best_only=True)
+    #model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+    model_checkpoint = ModelCheckpoint('unet_membrane2.hdf5', monitor='loss',verbose=1, save_best_only=True)
 
-    #model.load_weights('unet_membrane1.hdf5')
+    #model.load_weights('unet_membrane2.hdf5')
     #训练函数
     model.fit_generator(myGene,steps_per_epoch=20,epochs=1,callbacks=[model_checkpoint])
 

@@ -44,8 +44,11 @@ def adjustData(img,mask,flag_multi_class,num_class):
 
         mask[mask > 0.5] = 1
         mask[mask <= 0.5] = 0
-        #xx = np.reshape(mask, (256, 256))
+        #xx = np.reshape(mask[0], (256, 256))
         #io.imshow(xx)
+        #xx = np.reshape(mask[1], (256, 256))
+        #io.imshow(xx)
+        #print(xx)
     return (img,mask)
 
 
@@ -171,6 +174,6 @@ def saveResult(save_path,npyfile,flag_multi_class = False,num_class = 2):
     for i,item in enumerate(npyfile):
         img = labelVisualize(num_class,COLOR_DICT,item) if flag_multi_class else item[:,:,0]
 #多类的话就图成彩色，非多类（两类）的话就是黑白色
-        img[img>0.5] = 1
-        img[img<=0.5] = 0
+        #img[img>0.5] = 1
+        #img[img<=0.5] = 0
         io.imsave(os.path.join(save_path,"%d_predict.png"%i),img)

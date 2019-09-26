@@ -10,7 +10,6 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
 
 
-'''
 def unet(pretrained_weights = None,input_size = (256,256,1)):
     #padding为sanme的目的是保持输入输出图像大小的一致
     inputs = Input(input_size)
@@ -28,17 +27,17 @@ def unet(pretrained_weights = None,input_size = (256,256,1)):
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
-    drop4 = Dropout(0.5)(conv4)
+    #drop4 = Dropout(0.5)(conv4)
     #丢弃一部分数据 防止过拟合
-    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
     conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
     conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv5)
-    drop5 = Dropout(0.5)(conv5)
+    #drop5 = Dropout(0.5)(conv5)
 
-    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop5))
+    up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv5))
     #UpSamling2D 向上采样 图片增大 2,2 对于行和列都扩大两倍 图片扩大
-    merge6 = Concatenate(axis=3)([drop4, up6])
+    merge6 = Concatenate(axis=3)([conv4, up6])
     #连接对应的层次 drop4有x层 up6有y层 merge6就有x+y层
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
@@ -59,7 +58,7 @@ def unet(pretrained_weights = None,input_size = (256,256,1)):
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
     conv9 = Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv10 = Conv2D(1, 1, activation = 'sigmoid')(conv9)
+    conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
 
     model = Model(inputs = [inputs], outputs = [conv10])
 
@@ -71,15 +70,17 @@ def unet(pretrained_weights = None,input_size = (256,256,1)):
            model.load_weights(pretrained_weights)
 
     return model
-    '''
 
 
-def unet(pretrained_weights=None, input_size=(256, 256, 1)):
+
+def unet1(pretrained_weights=None, input_size=(256, 256, 1)):
 
     def conv2d(layer_input, filters, f_size=4, bn=True):
         """Layers used during downsampling"""
         d = Conv2D(filters, kernel_size=f_size, strides=2, padding='same')(layer_input)
         d = LeakyReLU(alpha=0.2)(d)
+        #LeakyReLU 和ReLU不同 对于小于0的部分进行线性处理 而不是直接归一为0
+        #f(x)=alpha * x for x < 0, f(x) = x for x>=0
         if bn:
             d = BatchNormalization(momentum=0.8)(d)
         return d
@@ -115,6 +116,8 @@ def unet(pretrained_weights=None, input_size=(256, 256, 1)):
     u6 = deconv2d(u5, d1, gf)
 
     u7 = UpSampling2D(size=2)(u6)
+    #前面用的ReLU激活函数 比0小的部分是进行线性处理 而不是变为0
+    #所以可以使用tanh作为激活函数
     output_img = Conv2D(1, kernel_size=4, strides=1, padding='same', activation='tanh')(u7)
 
 
